@@ -21,4 +21,8 @@ public class Venue {
     public String getFormattedAddress() {
         return "hello";
     }
+
+    public String getId() {
+        return mId;
+    }
 }

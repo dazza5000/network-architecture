@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
+import com.amicly.bignerdranchadvanced.controller.VenueDetailActivity;
+
 /**
  * Created by darrankelinske on 8/25/16.
  */
@@ -28,7 +30,7 @@ public class VenueHolder extends RecyclerView.ViewHolder implements View.OnClick
     @Override
     public void onClick(View view) {
         Context context = view.getContext();
-//        Intent intent = MainActivity.newIntent(context, mVenue.getId());
-//        context.startActivity(intent);
+        Intent intent = VenueDetailActivity.newIntent(context, mVenue.getId());
+        context.startActivity(intent);
     }
 }

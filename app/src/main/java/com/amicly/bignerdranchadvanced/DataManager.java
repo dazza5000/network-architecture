@@ -1,6 +1,7 @@
 package com.amicly.bignerdranchadvanced;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -27,6 +28,10 @@ public class DataManager {
     private static final String TAG = "DataManager";
     private static final String FOURSQUARE_ENDPOINT
             = "https://api.foursquare.com/v2/";
+    private static final String OAUTH_ENDPOINT ="" +
+            "https://foursquare.com/oauth2/authenticate";
+    public static final String OAUTH_REDIRECT_URI =
+            "http://bignerdranch.com";
     private static final String CLIENT_ID = "RV5EALWWU2UQEAXUQVIEKFSNJBI55PFPCMIGS2450YPFD0TZ";
     private static final String CLIENT_SECRET = "HE2JWYCBCTPYRDO0YURWRCPR1ZU14UOQOPHAOAQ5RPGGH0BI";
     private static final String FOURSQUARE_VERSION = "20150406";
@@ -129,5 +134,24 @@ public class DataManager {
         for(VenueSearchListener listener : searchListenerList) {
             listener.onVenueSearchFinished();
         }
+    }
+
+    public String getAuthenticationUrl() {
+        return Uri.parse(OAUTH_ENDPOINT).buildUpon()
+                .appendQueryParameter("client_id", CLIENT_ID)
+                .appendQueryParameter("response_type", "token")
+                .appendQueryParameter("redirect_uri", OAUTH_REDIRECT_URI)
+                .build()
+                .toString();
+    }
+
+    public Venue getVenue(String venueId) {
+        for(Venue venue: venueList) {
+            if(venue.getId().equals(venueId))
+            {
+                return venue;
+            }
+        }
+        return null;
     }
 }

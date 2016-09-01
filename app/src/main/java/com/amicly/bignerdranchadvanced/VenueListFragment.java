@@ -13,6 +13,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.amicly.bignerdranchadvanced.controller.AuthenticationActivity;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -65,7 +67,7 @@ public class VenueListFragment extends Fragment implements DataManager.VenueSear
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 //        if (mTokenStore.getAccessToken() == null) {
-//            inflater.inflate(R.menu.menu_sign_in, menu);
+            inflater.inflate(R.menu.menu_sign_in, menu);
 //        } else {
 //            inflater.inflate(R.menu.menu_sign_out, menu);
 //        }
@@ -73,20 +75,20 @@ public class VenueListFragment extends Fragment implements DataManager.VenueSear
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-//        switch (item.getItemId()) {
-//            case R.id.sign_in:
-//                Intent authenticationIntent = AuthenticationActivity
-//                        .newIntent(getActivity());
-//                startActivityForResult(authenticationIntent,
-//                        AUTHENTICATION_ACTIVITY_REQUEST);
-//                return true;
-//            case R.id.sign_out:
+        switch (item.getItemId()) {
+            case R.id.sign_in:
+                Intent authenticationIntent = AuthenticationActivity
+                        .newIntent(getActivity());
+                startActivityForResult(authenticationIntent,
+                        AUTHENTICATION_ACTIVITY_REQUEST);
+                return true;
+            case R.id.sign_out:
 //                mTokenStore.setAccessToken(null);
-//                getActivity().invalidateOptionsMenu();
-//                return true;
-//            default:
+                getActivity().invalidateOptionsMenu();
+                return true;
+            default:
         return super.onOptionsItemSelected(item);
-        //     }
+             }
     }
 
     @Override
