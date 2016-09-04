@@ -13,14 +13,13 @@ import android.widget.Toast;
 import com.amicly.bignerdranchadvanced.DataManager;
 import com.amicly.bignerdranchadvanced.R;
 import com.amicly.bignerdranchadvanced.Venue;
-import com.amicly.bignerdranchadvanced.listener.VenueCheckInListener;
 import com.amicly.bignerdranchadvanced.model.TokenStore;
 
 /**
  * Created by daz on 8/30/16.
  */
 
-public class VenueDetailFragment extends Fragment implements VenueCheckInListener {
+public class VenueDetailFragment extends Fragment implements DataManager.VenueCheckInListener {
     private static final String ARG_VENUE_ID = "VenueDetailFragment.VenueId";
     private static final String EXPIRED_DIALOG = "expired_dialog";
 
@@ -64,7 +63,7 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
         mVenueId = getArguments().getString(ARG_VENUE_ID);
         mDataManager = DataManager.get(getActivity());
         mVenue = mDataManager.getVenue(mVenueId);
-//        mDataManager.addVenueCheckInListener(this);
+        mDataManager.addVenueCheckInListener(this);
     }
 
     @Override
@@ -81,13 +80,13 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
     @Override
     public void onStop() {
         super.onStop();
-//        mDataManager.removeVenueCheckInListener(this);
+        mDataManager.removeVenueCheckInListener(this);
     }
 
     private View.OnClickListener mCheckInClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-//            mDataManager.checkInToVenue(mVenueId);
+            mDataManager.checkInToVenue(mVenueId);
         }
     };
 
@@ -97,10 +96,12 @@ public class VenueDetailFragment extends Fragment implements VenueCheckInListene
                 Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void onTokenExpired() {
-        mCheckInButton.setVisibility(View.GONE);
+
+
+//    @Override
+//    public void onTokenExpired() {
+//        mCheckInButton.setVisibility(View.GONE);
 //        ExpiredTokenDialogFragment dialogFragment = new ExpiredTokenDialogFragment();
 //        dialogFragment.show(getFragmentManager(), EXPIRED_DIALOG);
-    }
+//    }
 }
