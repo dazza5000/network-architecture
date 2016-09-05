@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.amicly.bignerdranchadvanced.controller.AuthenticationActivity;
+import com.amicly.bignerdranchadvanced.model.TokenStore;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +29,7 @@ public class VenueListFragment extends Fragment implements DataManager.VenueSear
     private VenueListAdapter mVenueListAdapter;
     private List<Venue> mVenueList;
     private DataManager mDataManager;
+    private TokenStore mTokenStore;
 
 
     @Override
@@ -54,6 +56,7 @@ public class VenueListFragment extends Fragment implements DataManager.VenueSear
     public void onStart() {
         super.onStart();
         mDataManager = DataManager.get(getContext());
+        mTokenStore = TokenStore.get(getContext());
         mDataManager.addVenueSearchListener(this);
         mDataManager.fetchVenueSearch();
     }
@@ -66,11 +69,12 @@ public class VenueListFragment extends Fragment implements DataManager.VenueSear
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-//        if (mTokenStore.getAccessToken() == null) {
+        menu.clear();
+        if (mTokenStore.getAccessToken() == null) {
             inflater.inflate(R.menu.menu_sign_in, menu);
-//        } else {
-//            inflater.inflate(R.menu.menu_sign_out, menu);
-//        }
+        } else {
+            inflater.inflate(R.menu.menu_sign_out, menu);
+        }
     }
 
     @Override

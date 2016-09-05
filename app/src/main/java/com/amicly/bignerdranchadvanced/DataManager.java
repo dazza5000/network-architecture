@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 
+import com.amicly.bignerdranchadvanced.exception.UnauthorizedException;
+import com.amicly.bignerdranchadvanced.listener.VenueCheckInListener;
 import com.amicly.bignerdranchadvanced.model.TokenStore;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,7 +22,10 @@ import okhttp3.Response;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
+import rx.Observable;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by darrankelinske on 8/25/16.
@@ -34,7 +39,7 @@ public class DataManager {
     public static final String OAUTH_REDIRECT_URI =
             "http://bignerdranch.com";
     private static final String CLIENT_ID = "RV5EALWWU2UQEAXUQVIEKFSNJBI55PFPCMIGS2450YPFD0TZ";
-    private static final String CLIENT_SECRET = "HE2JWYCBCTPYRDO0YURWRCPR1ZU14UOQOPHAOAQ5RPGGH0BI";
+    private static final String CLIENT_SECRET = "MVJONWL2OTLGKSO0U0KNCD1H2XJVPRW4IKBBKOFZ1AJ4TX4P";
     private static final String FOURSQUARE_VERSION = "20150406";
     private static final String FOURSQUARE_MODE = "foursquare";
     private static final String SWARM_MODE = "swarm";
@@ -57,10 +62,12 @@ public class DataManager {
 
             OkHttpClient okHttpClient = new OkHttpClient.Builder()
                     .addInterceptor(sRequestInterceptor)
+                    .addInterceptor(sUnauthorizedInterceptor)
                     .build();
 
             OkHttpClient authenticatedHttpClient = new OkHttpClient.Builder()
-                    .addInterceptor(sAuthenticatedReqestInterceptor)
+                    .addInterceptor(sAuthenticatedRequestInterceptor)
+                    .addInterceptor(sUnauthorizedInterceptor)
                     .build();
 
             Retrofit basicRestAdapter = new Retrofit.Builder()
@@ -69,10 +76,14 @@ public class DataManager {
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();
 
+            RxJavaCallAdapterFactory rxAdapter =
+                    RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io());
+
             Retrofit authenticatedRestAdapter = new Retrofit.Builder()
                     .client(authenticatedHttpClient)
                     .baseUrl(FOURSQUARE_ENDPOINT)
                     .addConverterFactory(GsonConverterFactory.create(gson))
+                    .addCallAdapterFactory(rxAdapter)
                     .build();
 
             sDataManager = new DataManager(context, basicRestAdapter, authenticatedRestAdapter);
@@ -114,7 +125,7 @@ public class DataManager {
         }
     };
 
-    public static Interceptor sAuthenticatedReqestInterceptor = new Interceptor() {
+    public static Interceptor sAuthenticatedRequestInterceptor = new Interceptor() {
         @Override
         public Response intercept(Chain chain) throws IOException {
             Request original = chain.request();
@@ -133,6 +144,20 @@ public class DataManager {
         }
     };
 
+    public static Interceptor sUnauthorizedInterceptor = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            Response response = chain.proceed(request);
+
+            boolean unAuthorized = (response.code() == 401);
+            if (unAuthorized) {
+                throw new UnauthorizedException(new IOException("Unauthorized Exception"));
+            }
+            return response;
+        }
+    };
+
     public void fetchVenueSearch() {
         VenueInterface venueInterface =
                 mBasicRestAdapter.create(VenueInterface.class);
@@ -140,8 +165,11 @@ public class DataManager {
         call.enqueue(new Callback<VenueSearchResponse>() {
             @Override
             public void onResponse(Call<VenueSearchResponse> call, retrofit2.Response<VenueSearchResponse> response) {
-                venueList = response.body().getVenueList();
-                notifySearchListeners();
+                if (response.isSuccessful()) {
+                    venueList = response.body().getVenueList();
+                    notifySearchListeners();
+                }
+
             }
 
             @Override
@@ -155,16 +183,14 @@ public class DataManager {
     public void checkInToVenue(String venueId) {
         VenueInterface venueInterface =
                 authenticatedRestAdapter.create(VenueInterface.class);
-        Call<Object> call = venueInterface.venueCheckIn(venueId);
-        call.enqueue(new Callback<Object>() {
-            @Override
-            public void onResponse(Call<Object> call, retrofit2.Response<Object> response) {
-                notifycheckInListeners();
-            }
-
-            @Override
-            public void onFailure(Call<Object> call, Throwable t) {
-
+        Observable<Object> call = venueInterface.venueCheckIn(venueId);
+        call.subscribe(o -> {
+            notifycheckInListeners();
+        }, throwable -> {
+            Log.d("venueCheckIn", "Have error: " + throwable.toString());
+            if (throwable instanceof UnauthorizedException) {
+                tokenStore.setAccessToken(null);
+                notifyCheckInListenersTokenExpired();
             }
         });
 
@@ -190,10 +216,6 @@ public class DataManager {
         for(VenueSearchListener listener : searchListenerList) {
             listener.onVenueSearchFinished();
         }
-    }
-
-    public interface VenueCheckInListener {
-        void onVenueCheckInFinished();
     }
 
     public void addVenueCheckInListener(VenueCheckInListener listener) {
@@ -227,5 +249,11 @@ public class DataManager {
             }
         }
         return null;
+    }
+
+    private void notifyCheckInListenersTokenExpired() {
+        for (VenueCheckInListener listener : checkInListenerList) {
+            listener.onTokenExpired();
+        }
     }
 }

@@ -13,13 +13,14 @@ import android.widget.Toast;
 import com.amicly.bignerdranchadvanced.DataManager;
 import com.amicly.bignerdranchadvanced.R;
 import com.amicly.bignerdranchadvanced.Venue;
+import com.amicly.bignerdranchadvanced.listener.VenueCheckInListener;
 import com.amicly.bignerdranchadvanced.model.TokenStore;
 
 /**
  * Created by daz on 8/30/16.
  */
 
-public class VenueDetailFragment extends Fragment implements DataManager.VenueCheckInListener {
+public class VenueDetailFragment extends Fragment implements VenueCheckInListener {
     private static final String ARG_VENUE_ID = "VenueDetailFragment.VenueId";
     private static final String EXPIRED_DIALOG = "expired_dialog";
 
@@ -96,12 +97,17 @@ public class VenueDetailFragment extends Fragment implements DataManager.VenueCh
                 Toast.LENGTH_SHORT).show();
     }
 
-
-
 //    @Override
 //    public void onTokenExpired() {
 //        mCheckInButton.setVisibility(View.GONE);
 //        ExpiredTokenDialogFragment dialogFragment = new ExpiredTokenDialogFragment();
 //        dialogFragment.show(getFragmentManager(), EXPIRED_DIALOG);
 //    }
+
+    @Override
+    public void onTokenExpired() {
+        mCheckInButton.setVisibility(View.GONE);
+        ExpiredTokenDialogFragment dialogFragment = new ExpiredTokenDialogFragment();
+        dialogFragment.show(getFragmentManager(), EXPIRED_DIALOG);
+    }
 }
