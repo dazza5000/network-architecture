@@ -2,6 +2,7 @@ package com.amicly.bignerdranchadvanced;
 
 import android.content.Context;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.amicly.bignerdranchadvanced.exception.UnauthorizedException;
@@ -60,18 +61,9 @@ public class DataManager {
                     new VenueListDeserializer())
                     .create();
 
-            OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                    .addInterceptor(sRequestInterceptor)
-                    .addInterceptor(sUnauthorizedInterceptor)
-                    .build();
-
-            OkHttpClient authenticatedHttpClient = new OkHttpClient.Builder()
-                    .addInterceptor(sAuthenticatedRequestInterceptor)
-                    .addInterceptor(sUnauthorizedInterceptor)
-                    .build();
 
             Retrofit basicRestAdapter = new Retrofit.Builder()
-                    .client(okHttpClient)
+                    .client(getOkHttpClient())
                     .baseUrl(FOURSQUARE_ENDPOINT)
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();
@@ -80,7 +72,7 @@ public class DataManager {
                     RxJavaCallAdapterFactory.createWithScheduler(Schedulers.io());
 
             Retrofit authenticatedRestAdapter = new Retrofit.Builder()
-                    .client(authenticatedHttpClient)
+                    .client(getAuthenticatedOkHttpClient())
                     .baseUrl(FOURSQUARE_ENDPOINT)
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .addCallAdapterFactory(rxAdapter)
@@ -91,6 +83,29 @@ public class DataManager {
 
         return sDataManager;
 
+    }
+
+    @NonNull
+    private static OkHttpClient getAuthenticatedOkHttpClient() {
+        return new OkHttpClient.Builder()
+                        .addInterceptor(sAuthenticatedRequestInterceptor)
+                        .addInterceptor(sUnauthorizedInterceptor)
+                        .build();
+    }
+
+    @NonNull
+    private static OkHttpClient getOkHttpClient() {
+        return new OkHttpClient.Builder()
+                        .addInterceptor(sRequestInterceptor)
+                        .addInterceptor(sUnauthorizedInterceptor)
+                        .build();
+    }
+
+    public static DataManager get(Context context, Retrofit basicRestAdapter, Retrofit authenticatedRestAdapter) {
+        if (sDataManager == null) {
+            sDataManager = new DataManager(context, basicRestAdapter, authenticatedRestAdapter);
+        }
+        return sDataManager;
     }
 
     private DataManager(Context context, Retrofit basicRestAdapter,
@@ -158,9 +173,8 @@ public class DataManager {
         }
     };
 
-    public void fetchVenueSearch() {
-        VenueInterface venueInterface =
-                mBasicRestAdapter.create(VenueInterface.class);
+    public void fetchVenueSearch(VenueInterface venueInterface) {
+
         Call<VenueSearchResponse> call = venueInterface.venueSearch(TEST_LAT_LNG);
         call.enqueue(new Callback<VenueSearchResponse>() {
             @Override
@@ -169,7 +183,6 @@ public class DataManager {
                     venueList = response.body().getVenueList();
                     notifySearchListeners();
                 }
-
             }
 
             @Override
@@ -178,6 +191,13 @@ public class DataManager {
 
             }
         });
+
+    }
+
+    public void fetchVenueSearch() {
+        VenueInterface venueInterface =
+                mBasicRestAdapter.create(VenueInterface.class);
+        fetchVenueSearch(venueInterface);
     }
 
     public void checkInToVenue(String venueId) {
